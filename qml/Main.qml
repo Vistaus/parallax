@@ -1,37 +1,47 @@
-import QtQuick 2.7
+import QtQuick 2.12
 import Lomiri.Components 1.3
-//import QtQuick.Controls 2.2
-import QtQuick.Layouts 1.3
-import Qt.labs.settings 1.0
+
+import "../js/trustPipeline.js" as TrustPipeline
 
 MainView {
     id: root
-    objectName: 'mainView'
-    applicationName: 'parallax.pollux'
-    automaticOrientation: true
-
     width: units.gu(45)
     height: units.gu(75)
 
-    Page {
+    applicationName: "pollux.parallax"
+
+    // Build trust models ONCE
+    property var trustModels: TrustPipeline.buildTrustModels()
+
+    PageStack {
+        id: stack
         anchors.fill: parent
 
-        header: PageHeader {
-            id: header
-            title: i18n.tr('Parallax')
+        Component.onCompleted: {
+            var home = stack.push(Qt.resolvedUrl("HomeView.qml"), {
+                trustModels: root.trustModels
+            })
+            // Connect signal from HomeView to our navigation function
+            home.requestAppList.connect(openAppList)
         }
 
-        Label {
-            anchors {
-                top: header.bottom
-                left: parent.left
-                right: parent.right
-                bottom: parent.bottom
-            }
-            text: i18n.tr('Hello World!')
+        // Home → App List
+        function openAppList() {
+            var appList = stack.push(Qt.resolvedUrl("AppListView.qml"), {
+                trustModels: root.trustModels
+            })
+            
+            // Connect selection signal from AppListView
+            appList.appSelected.connect(function(appModel) {
+                 openAppDetail(appModel)
+            })
+        }
 
-            verticalAlignment: Label.AlignVCenter
-            horizontalAlignment: Label.AlignHCenter
+        // App List → App Detail
+        function openAppDetail(appModel) {
+            stack.push(Qt.resolvedUrl("AppDetailView.qml"), {
+                model: appModel
+            })
         }
     }
 }
