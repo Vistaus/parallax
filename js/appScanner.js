@@ -24,7 +24,9 @@ var path = {
 };
 
 // Known locations for Click apps
-const CLICK_APP_DIR = "/opt/click.ubuntu.com";
+const CLICK_APP_DIR = (typeof process !== "undefined" && process.env.CLICK_ROOT) 
+    ? process.env.CLICK_ROOT 
+    : "";
 
 /**
  * Main entry point.
@@ -66,7 +68,7 @@ function discoverClickApps(rootDir) {
     }
 
     const appDirs = [];
-    // Structure: /opt/click.ubuntu.com/{package.name}/current/
+    // Structure: {click_root}/{package.name}/current/
     const packages = fs.readdirSync(rootDir);
 
     for (var i = 0; i < packages.length; i++) {

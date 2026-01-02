@@ -12,6 +12,7 @@ install_manifest.txt
 
 # Logs
 *.log
+.env
 
 # Editor
 .vscode/

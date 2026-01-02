@@ -1,4 +1,5 @@
 {
+    "icon": "assets/logo.png",
     "name": "parallax.pollux",
     "description": "Trust & transparency layer for Ubuntu Touch applications",
     "architecture": "@CLICK_ARCH@",

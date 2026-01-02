@@ -64,9 +64,10 @@ Page {
                     height: units.gu(7)
                     
                     Image {
-                        source: "../assets/logo.svg"
-                        height: units.gu(4)
-                        width: units.gu(4)
+                        id: appLogo
+                        source: "../assets/logo-black.png"
+                        height: units.gu(14)
+                        width: units.gu(14)
                         anchors.centerIn: parent
                         fillMode: Image.PreserveAspectFit
                         smooth: true

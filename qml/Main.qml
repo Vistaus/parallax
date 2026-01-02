@@ -1,14 +1,18 @@
 import QtQuick 2.12
 import Lomiri.Components 1.3
+import QtQuick.Layouts 1.12
+
 
 import "../js/trustPipeline.js" as TrustPipeline
 
 MainView {
     id: root
+    objectName: "mainView"
+
+    applicationName: "parallax.pollux"
+    anchorToKeyboard: true
     width: units.gu(45)
     height: units.gu(75)
-
-    applicationName: "pollux.parallax"
 
     // Build trust models ONCE
     property var trustModels: TrustPipeline.buildTrustModels()
