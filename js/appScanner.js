@@ -4,8 +4,24 @@
  * @frozen v1
  */
 
-const fs = require("fs");
-const path = require("path");
+// Shim for fs and path in QML
+var fs = {
+    existsSync: function(p) { console.warn("fs.existsSync shim called for " + p); return false; },
+    readdirSync: function(p) { return []; },
+    readFileSync: function(p) { return ""; },
+    statSync: function(p) { return { mtime: new Date() }; }
+};
+
+var path = {
+    join: function() { 
+        var parts = [];
+        for (var i=0; i<arguments.length; i++) parts.push(arguments[i]);
+        return parts.join("/"); 
+    },
+    dirname: function(p) { return p.substring(0, p.lastIndexOf("/")); },
+    basename: function(p) { return p.substring(p.lastIndexOf("/") + 1); },
+    isAbsolute: function(p) { return p.startsWith("/"); }
+};
 
 // Known locations for Click apps
 const CLICK_APP_DIR = "/opt/click.ubuntu.com";
@@ -13,7 +29,7 @@ const CLICK_APP_DIR = "/opt/click.ubuntu.com";
 /**
  * Main entry point.
  * Returns a list of RawAppMetadata objects.
- * @param {string} [overrideRoot] - Optional root path for testing (mocking /opt)
+ * @param {string} [overrideRoot] - Optional override for testing (mocking /opt)
  * @returns {Array<Object>}
  */
 function scanInstalledApps(overrideRoot) {
@@ -22,7 +38,8 @@ function scanInstalledApps(overrideRoot) {
 
   try {
     const clickApps = discoverClickApps(searchRoot);
-    for (const app of clickApps) {
+    for (var i = 0; i < clickApps.length; i++) {
+      var app = clickApps[i];
       const metadata = readAppMetadata(app);
       if (metadata) {
         // Filter out completely failed reads if any
@@ -52,7 +69,8 @@ function discoverClickApps(rootDir) {
     // Structure: /opt/click.ubuntu.com/{package.name}/current/
     const packages = fs.readdirSync(rootDir);
 
-    for (const pkg of packages) {
+    for (var i = 0; i < packages.length; i++) {
+      var pkg = packages[i];
       // Defensive: skip hidden files or non-directories
       if (pkg.startsWith(".")) continue;
 
@@ -132,11 +150,16 @@ function safeReadDisplayName(appPath) {
     }
 
     // 2. Try .desktop file
-    const desktopFiles = fs
-      .readdirSync(appPath)
-      .filter((f) => f.endsWith(".desktop"));
-    if (desktopFiles.length > 0) {
-      const dPath = path.join(appPath, desktopFiles[0]);
+    // Shim fs.readdirSync returns []
+    const desktopFiles = fs.readdirSync(appPath);
+    // .filter is OK if array is empty
+    const filtered = [];
+    for(var k=0; k<desktopFiles.length; k++) {
+        if(desktopFiles[k].endsWith(".desktop")) filtered.push(desktopFiles[k]);
+    }
+    
+    if (filtered.length > 0) {
+      const dPath = path.join(appPath, filtered[0]);
       const content = fs.readFileSync(dPath, "utf8");
       const nameMatch = content.match(/^Name=(.*)$/m);
       if (nameMatch) return nameMatch[1].trim();
@@ -175,11 +198,14 @@ function safeReadIcon(appPath) {
     }
 
     // Try .desktop
-    const desktopFiles = fs
-      .readdirSync(appPath)
-      .filter((f) => f.endsWith(".desktop"));
-    if (desktopFiles.length > 0) {
-      const dPath = path.join(appPath, desktopFiles[0]);
+    const desktopFiles = fs.readdirSync(appPath);
+    const filtered = [];
+    for(var k=0; k<desktopFiles.length; k++) {
+        if(desktopFiles[k].endsWith(".desktop")) filtered.push(desktopFiles[k]);
+    }
+
+    if (filtered.length > 0) {
+      const dPath = path.join(appPath, filtered[0]);
       const content = fs.readFileSync(dPath, "utf8");
       const iconMatch = content.match(/^Icon=(.*)$/m);
       if (iconMatch) {
@@ -197,32 +223,11 @@ function safeReadIcon(appPath) {
 }
 
 function safeReadConfinement(appPath) {
-  // Strategy: Look for apparmor profile json or text
-  // Often named: {pkgname}_{appname}_{version}.json or similar
-  // Or just look into manifest for hooks but apparmor profile is more truthy
-
-  // Simpler v1 strategy: Read manifest 'hooks' as primary source for confinement intent
-  // But PROMPT says: "AppArmor Profile -> Classification"
-  // Let's look for a .apparmor file or similar in the directory?
-  // In UT, AppArmor profiles are usually generated.
-  // BUT apps ship with a security profile definition in manifest.json usually under 'hooks'.
-  // Or a separate apparmor file.
-
-  // We will scan for any file ending in .apparmor or .json that looks like a policy for V1
-  // Actually, usually apparmor profiles are in /var/lib/apparmor/profiles/... but we are restricted to app dir?
-  // "Click package metadata ... AppArmor profiles"
-  // Click packages contain a manifest that declares the policy "template".
-  // e.g. "confinement": "strict" (standard) or using a template like "unconfined".
-
   try {
     const manifestPath = path.join(appPath, "manifest.json");
     if (fs.existsSync(manifestPath)) {
       const content = fs.readFileSync(manifestPath, "utf8");
       const json = JSON.parse(content);
-      // Check for hooks
-      // "hooks": { "myapp": { "apparmor": "myapp.apparmor", "desktop": "myapp.desktop" } }
-      // OR checks generic manifest properties if they exist?
-      // Actually, usually it's defined in the AppArmor file referenced in hooks.
 
       if (json.hooks) {
         for (const key in json.hooks) {
@@ -239,11 +244,14 @@ function safeReadConfinement(appPath) {
     }
 
     // Fallback: look for any .apparmor file
-    const aaFiles = fs
-      .readdirSync(appPath)
-      .filter((f) => f.endsWith(".apparmor"));
-    if (aaFiles.length > 0) {
-      const aaPath = path.join(appPath, aaFiles[0]);
+    const aaFiles = fs.readdirSync(appPath);
+    const filtered = [];
+    for(var k=0; k<aaFiles.length; k++) {
+        if(aaFiles[k].endsWith(".apparmor")) filtered.push(aaFiles[k]);
+    }
+
+    if (filtered.length > 0) {
+      const aaPath = path.join(appPath, filtered[0]);
       const aaContent = fs.readFileSync(aaPath, "utf8");
       return classifyAppArmor(aaContent);
     }
@@ -256,11 +264,6 @@ function safeReadConfinement(appPath) {
 function classifyAppArmor(content) {
   if (!content) return "unknown";
   const lower = content.toLowerCase();
-
-  // Simple & Honest Classification
-  // "strict sandbox" usually means using the default restricted template
-  // "partial overrides" -> medium
-  // "classic / broad" -> weak
 
   // Keywords for V1 (heuristic based on typical UT profiles)
   if (lower.includes("policy_groups") || lower.includes("template")) {
@@ -275,9 +278,7 @@ function classifyAppArmor(content) {
     return "medium"; // Custom caps usually means partial overrides
   }
 
-  return "strict"; // Optimistic default or "unknown"? Prompt says "Safe defaults". Strict is safest interpretation of "I don't see risky things"?
-  // Or "unknown" if unreadable.
-  // Let's default to 'strict' if it parses but no red flags found, 'unknown' if we can't parse (handled by caller catch).
+  return "strict"; 
 }
 
 function safeReadPermissions(appPath) {
@@ -294,12 +295,15 @@ function safeReadPermissions(appPath) {
     let aaContent = "";
 
     // Re-find AppArmor file
-    const aaFiles = fs
-      .readdirSync(appPath)
-      .filter((f) => f.endsWith(".apparmor"));
-    if (aaFiles.length > 0) {
+    const aaFiles = fs.readdirSync(appPath);
+    const filtered = [];
+    for(var k=0; k<aaFiles.length; k++) {
+        if(aaFiles[k].endsWith(".apparmor")) filtered.push(aaFiles[k]);
+    }
+
+    if (filtered.length > 0) {
       aaContent = fs
-        .readFileSync(path.join(appPath, aaFiles[0]), "utf8")
+        .readFileSync(path.join(appPath, filtered[0]), "utf8")
         .toLowerCase();
     } else {
       // Try manifest hooks
@@ -322,32 +326,18 @@ function safeReadPermissions(appPath) {
     if (!aaContent) return perms;
 
     // V1 Coarse Mapping
-    // network: "networking" policy group
     if (aaContent.includes("networking")) perms.network = true;
-
-    // camera: "camera" policy group or device
     if (aaContent.includes("camera")) perms.camera = true;
-
-    // microphone: "audio" or "microphone" policy group (often "audio" in UT)
     if (aaContent.includes("audio") || aaContent.includes("microphone"))
       perms.microphone = true;
-
-    // location: "location" policy group
     if (aaContent.includes("location")) perms.location = true;
-
-    // storage: "content_exchange" or "music" / "video" / "picture" usually imply storage
-    // Or explicit home access. "content_exchange" is common.
     if (
       aaContent.includes("content_exchange") ||
       aaContent.includes("content_hub") ||
       aaContent.includes("keep-display-on")
     ) {
-      // 'keep-display-on' is random but checking generic policy groups.
-      // Let's stick to prompt: "User home access".
-      // Policy group "content_exchange" is the standard way to read/write files.
     }
     if (aaContent.includes("content_exchange")) perms.storage = true;
-    // Also check raw rules if possible? "owner @{HOME}/..."
     if (aaContent.includes("@{home}")) perms.storage = true;
   } catch (e) {
     // Fail silently, return false for all
@@ -371,8 +361,6 @@ function safeReadMaintainer(appPath) {
 
 function safeReadLastUpdated(appPath) {
   try {
-    // Install metadata is often in .click/info/* but we might not have access.
-    // Fallback: check mtime of manifest
     const manifestPath = path.join(appPath, "manifest.json");
     if (fs.existsSync(manifestPath)) {
       const stats = fs.statSync(manifestPath);
@@ -383,10 +371,3 @@ function safeReadLastUpdated(appPath) {
   }
   return null;
 }
-
-module.exports = {
-  scanInstalledApps,
-  // Exporting internals for testing if needed, though scanInstalledApps(testRoot) is preferred
-  discoverClickApps,
-  readAppMetadata,
-};

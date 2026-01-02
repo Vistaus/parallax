@@ -50,4 +50,4 @@ function normalizeMaintainer(maintainerName) {
   return { name, present: true };
 }
 
-module.exports = { normalizeUpdateInfo, normalizeMaintainer };
+

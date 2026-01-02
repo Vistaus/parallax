@@ -4,24 +4,21 @@
  * @frozen v1
  */
 
-const { TrustSignals } = require("./trustSignals");
+.import "trustSignals.js" as TS
+
+var TrustSignals = TS.TrustSignals;
 
 // Explanation Contract (Frozen)
-const EXPLANATIONS = {
-  [TrustSignals.USES_NETWORK]: "This app can access the internet.",
-  [TrustSignals.USES_CAMERA]: "This app can access the camera.",
-  [TrustSignals.USES_MICROPHONE]: "This app can access the microphone.",
-  [TrustSignals.USES_LOCATION]: "This app can access your location.",
-  [TrustSignals.USES_STORAGE]: "This app can access local storage.",
-
-  [TrustSignals.STALE_APP]: "This app hasn’t been updated in over a year.",
-  [TrustSignals.MISSING_MAINTAINER]: "This app has no listed maintainer.",
-
-  [TrustSignals.WEAK_CONFINEMENT]:
-    "This app has fewer system restrictions than most apps.",
-  [TrustSignals.MEDIUM_CONFINEMENT]:
-    "This app has moderate system restrictions.",
-};
+const EXPLANATIONS = {};
+EXPLANATIONS[TrustSignals.USES_NETWORK] = "This app can access the internet.";
+EXPLANATIONS[TrustSignals.USES_CAMERA] = "This app can access the camera.";
+EXPLANATIONS[TrustSignals.USES_MICROPHONE] = "This app can access the microphone.";
+EXPLANATIONS[TrustSignals.USES_LOCATION] = "This app can access your location.";
+EXPLANATIONS[TrustSignals.USES_STORAGE] = "This app can access local storage.";
+EXPLANATIONS[TrustSignals.STALE_APP] = "This app hasn’t been updated in over a year.";
+EXPLANATIONS[TrustSignals.MISSING_MAINTAINER] = "This app has no listed maintainer.";
+EXPLANATIONS[TrustSignals.WEAK_CONFINEMENT] = "This app has fewer system restrictions than most apps.";
+EXPLANATIONS[TrustSignals.MEDIUM_CONFINEMENT] = "This app has moderate system restrictions.";
 
 /**
  * Returns a list of explanation strings for the given signals.
@@ -30,15 +27,21 @@ const EXPLANATIONS = {
  */
 function getExplanations(activeSignals) {
   const explanations = [];
-  const signals = new Set(activeSignals);
+  
+  // Safe iteration
+  var signalsArray = [];
+  if (activeSignals instanceof Set) {
+      activeSignals.forEach(function(s) { signalsArray.push(s); });
+  } else {
+      signalsArray = activeSignals;
+  }
 
-  for (const signal of signals) {
-    if (Object.prototype.hasOwnProperty.call(EXPLANATIONS, signal)) {
+  for (var i = 0; i < signalsArray.length; i++) {
+    var signal = signalsArray[i];
+    if (EXPLANATIONS.hasOwnProperty(signal)) {
       explanations.push(EXPLANATIONS[signal]);
     }
   }
 
-  return explanations.sort(); // Deterministic order usually preferred, simple sort for now
+  return explanations.sort(); 
 }
-
-module.exports = { getExplanations, EXPLANATIONS };

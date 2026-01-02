@@ -21,4 +21,4 @@ const TrustSignals = Object.freeze({
   MEDIUM_CONFINEMENT: "MEDIUM_CONFINEMENT",
 });
 
-module.exports = { TrustSignals };
+

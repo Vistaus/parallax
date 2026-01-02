@@ -4,22 +4,22 @@
  * @frozen v1
  */
 
-const { TrustSignals } = require("./trustSignals");
+.import "trustSignals.js" as TS
 
+var TrustSignals = TS.TrustSignals;
 const BASE_SCORE = 100;
 
 // Penalty Configuration (Frozen)
-const PENALTIES = {
-  [TrustSignals.USES_NETWORK]: -15,
-  [TrustSignals.USES_CAMERA]: -20,
-  [TrustSignals.USES_MICROPHONE]: -20,
-  [TrustSignals.USES_LOCATION]: -15,
-  [TrustSignals.USES_STORAGE]: -10,
-  [TrustSignals.STALE_APP]: -10,
-  [TrustSignals.MISSING_MAINTAINER]: -5,
-  [TrustSignals.WEAK_CONFINEMENT]: -15,
-  [TrustSignals.MEDIUM_CONFINEMENT]: -5,
-};
+const PENALTIES = {};
+PENALTIES[TrustSignals.USES_NETWORK] = -15;
+PENALTIES[TrustSignals.USES_CAMERA] = -20;
+PENALTIES[TrustSignals.USES_MICROPHONE] = -20;
+PENALTIES[TrustSignals.USES_LOCATION] = -15;
+PENALTIES[TrustSignals.USES_STORAGE] = -10;
+PENALTIES[TrustSignals.STALE_APP] = -10;
+PENALTIES[TrustSignals.MISSING_MAINTAINER] = -5;
+PENALTIES[TrustSignals.WEAK_CONFINEMENT] = -15;
+PENALTIES[TrustSignals.MEDIUM_CONFINEMENT] = -5;
 
 /**
  * Calculates the trust score and risk level based on a set of active signals.
@@ -28,15 +28,27 @@ const PENALTIES = {
  */
 function calculateTrust(activeSignals) {
   let score = BASE_SCORE;
-  const signals = new Set(activeSignals);
+  // Handle Set or Array conversion if needed
+  // In QML JS, Set might not be fully iterable with for-of loop if it's a polyfill, but generally ES6 Set is supported.
+  // Assuming activeSignals is iterable.
+  // If activeSignals is a Set from signalEngine (which uses new Set()), keep using it.
+  
+  // Safe iteration
+  var signalsArray = [];
+  if (activeSignals instanceof Set) {
+      activeSignals.forEach(function(s) { signalsArray.push(s); });
+  } else {
+      signalsArray = activeSignals;
+  }
 
   // Apply penalties
-  for (const signal of signals) {
-    if (Object.prototype.hasOwnProperty.call(PENALTIES, signal)) {
+  for (var i = 0; i < signalsArray.length; i++) {
+    var signal = signalsArray[i];
+    if (PENALTIES.hasOwnProperty(signal)) {
       score += PENALTIES[signal];
     } else {
       // Unknown signals are ignored in v1 as per strict rules
-      console.warn(`Warning: Unknown signal encountered: ${signal}`);
+      console.warn("Warning: Unknown signal encountered: " + signal);
     }
   }
 
@@ -53,7 +65,5 @@ function calculateTrust(activeSignals) {
     riskLevel = "high";
   }
 
-  return { score, riskLevel };
+  return { score: score, riskLevel: riskLevel };
 }
-
-module.exports = { calculateTrust, PENALTIES, BASE_SCORE };

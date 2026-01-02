@@ -4,7 +4,7 @@
  * @frozen v1
  */
 
-const { TrustSignals } = require("./trustSignals");
+.import "trustSignals.js" as TS
 
 /**
  * @param {Object} rawApp
@@ -12,6 +12,7 @@ const { TrustSignals } = require("./trustSignals");
  */
 function deriveTrustSignals(rawApp) {
   const signals = new Set();
+  const TrustSignals = TS.TrustSignals;
 
   // Permissions
   if (rawApp.permissions && rawApp.permissions.network) {
@@ -26,7 +27,8 @@ function deriveTrustSignals(rawApp) {
   if (rawApp.permissions && rawApp.permissions.location) {
     signals.add(TrustSignals.USES_LOCATION);
   }
-  if (rawApp.permissions && rawApp.permissions.storage) {
+  if (rawApp.permissionsfix/initial-stability
+ && rawApp.permissions.storage) {
     signals.add(TrustSignals.USES_STORAGE);
   }
 
@@ -68,5 +70,3 @@ function deriveTrustSignals(rawApp) {
 
   return signals;
 }
-
-module.exports = { deriveTrustSignals };

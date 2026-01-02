@@ -79,4 +79,4 @@ class AppTrustModel {
   }
 }
 
-module.exports = { AppTrustModel };
+
