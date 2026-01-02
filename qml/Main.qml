@@ -21,23 +21,11 @@ MainView {
             var home = stack.push(Qt.resolvedUrl("HomeView.qml"), {
                 trustModels: root.trustModels
             })
-            // Connect signal from HomeView to our navigation function
-            home.requestAppList.connect(openAppList)
+            // Connect signal from HomeView directly to detail view
+            home.requestAppDetail.connect(openAppDetail)
         }
 
-        // Home → App List
-        function openAppList() {
-            var appList = stack.push(Qt.resolvedUrl("AppListView.qml"), {
-                trustModels: root.trustModels
-            })
-            
-            // Connect selection signal from AppListView
-            appList.appSelected.connect(function(appModel) {
-                 openAppDetail(appModel)
-            })
-        }
-
-        // App List → App Detail
+        // Home → App Detail
         function openAppDetail(appModel) {
             stack.push(Qt.resolvedUrl("AppDetailView.qml"), {
                 model: appModel

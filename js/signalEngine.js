@@ -27,8 +27,7 @@ function deriveTrustSignals(rawApp) {
   if (rawApp.permissions && rawApp.permissions.location) {
     signals.add(TrustSignals.USES_LOCATION);
   }
-  if (rawApp.permissionsfix/initial-stability
- && rawApp.permissions.storage) {
+  if (rawApp.permissions && rawApp.permissions.storage) {
     signals.add(TrustSignals.USES_STORAGE);
   }
 

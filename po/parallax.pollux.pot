@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: parallax.pollux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-02 10:00+0000\n"
+"POT-Creation-Date: 2026-01-02 11:31+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,114 +17,64 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../qml/AppDetailView.qml:53
-msgid "Version %1"
+#: ../qml/AppDetailView.qml:18 ../qml/AppDetailView.qml:24
+msgid "Unknown"
 msgstr ""
 
-#: ../qml/AppDetailView.qml:72
-msgid "Trust score"
+#: ../qml/AppDetailView.qml:20
+msgid "No Email"
 msgstr ""
 
-#: ../qml/AppDetailView.qml:108
-msgid "Why this score"
+#: ../qml/AppDetailView.qml:187
+msgid "Version: %1"
 msgstr ""
 
-#: ../qml/AppDetailView.qml:114
-msgid "No notable trust signals were found."
+#: ../qml/AppDetailView.qml:212
+msgid "Parallax Score"
 msgstr ""
 
-#: ../qml/AppDetailView.qml:138
+#: ../qml/AppDetailView.qml:290
+msgid "Why this score?"
+msgstr ""
+
+#: ../qml/AppDetailView.qml:293
+msgid "No signals found."
+msgstr ""
+
+#: ../qml/AppDetailView.qml:320
 msgid "Permissions"
 msgstr ""
 
-#: ../qml/AppDetailView.qml:146
-msgid "Network"
+#: ../qml/AppDetailView.qml:356
+msgid "Updated: "
 msgstr ""
 
-#: ../qml/AppDetailView.qml:147
-msgid "Camera"
-msgstr ""
-
-#: ../qml/AppDetailView.qml:148
-msgid "Microphone"
-msgstr ""
-
-#: ../qml/AppDetailView.qml:149
-msgid "Location"
-msgstr ""
-
-#: ../qml/AppDetailView.qml:150
-msgid "Storage"
-msgstr ""
-
-#: ../qml/AppDetailView.qml:152
-msgid "No special permissions"
-msgstr ""
-
-#: ../qml/AppDetailView.qml:172
-msgid "Updates"
-msgstr ""
-
-#: ../qml/AppDetailView.qml:179
-msgid "Last updated %1 months ago"
-msgstr ""
-
-#: ../qml/AppDetailView.qml:180
-msgid "Update information not available"
-msgstr ""
-
-#: ../qml/AppDetailView.qml:199
+#: ../qml/AppDetailView.qml:379
 msgid "Maintainer"
 msgstr ""
 
-#: ../qml/AppDetailView.qml:207
-msgid "No maintainer information provided"
+#: ../qml/AppDetailView.qml:403
+msgid "Contact"
 msgstr ""
 
-#: ../qml/AppDetailView.qml:217
-msgid "Parallax provides information to help you understand app trust. "
+#: ../qml/AppDetailView.qml:432
+msgid ""
+"Parallax provides information to help you understand app trust. It does not "
+"block or monitor apps."
 msgstr ""
 
-#: ../qml/AppListView.qml:9
-msgid "Apps"
+#: ../qml/HomeView.qml:147
+msgid "Apps Protected"
 msgstr ""
 
-#: ../qml/AppListView.qml:62
-msgid "Score: %1"
+#: ../qml/HomeView.qml:188
+msgid "Installed Applications"
 msgstr ""
 
-#: ../qml/HomeView.qml:8 parallax.desktop.in.h:1
+#: ../qml/HomeView.qml:212
+msgid "No applications found"
+msgstr ""
+
+#: parallax.desktop.in.h:1
 msgid "Parallax"
-msgstr ""
-
-#: ../qml/HomeView.qml:23
-msgid "Some apps may require your attention."
-msgstr ""
-
-#: ../qml/HomeView.qml:26
-msgid "Most of your apps have a low trust risk."
-msgstr ""
-
-#: ../qml/HomeView.qml:28
-msgid "Your apps appear to be in good standing."
-msgstr ""
-
-#: ../qml/HomeView.qml:58
-msgid "%1 apps installed"
-msgstr ""
-
-#: ../qml/HomeView.qml:86
-msgid "Trust overview"
-msgstr ""
-
-#: ../qml/HomeView.qml:97
-msgid "Low: %1"
-msgstr ""
-
-#: ../qml/HomeView.qml:102
-msgid "Medium: %1"
-msgstr ""
-
-#: ../qml/HomeView.qml:107
-msgid "High: %1"
 msgstr ""

@@ -1,225 +1,442 @@
 import QtQuick 2.12
 import QtQuick.Controls 2.12
+import QtQuick.Layouts 1.12
+import QtGraphicalEffects 1.12
 import Lomiri.Components 1.3
 
 Page {
     id: detail
+    
 
-    title: model.displayName
+    // Force hide default header by providing a dummy invisible item
+    header: Item { visible: false; height: 0 }
+    
+    property var model    // AppTrustModel injected
+    
+    // Helper to extract email
+    function getEmail(maintainerString) {
+        if (!maintainerString) return i18n.tr("Unknown")
+        var match = maintainerString.match(/<([^>]+)>/)
+        return match ? match[1] : i18n.tr("No Email")
+    }
 
-    property var model    // AppTrustModel injected on navigation
-
+    function getName(maintainerString) {
+        if (!maintainerString) return i18n.tr("Unknown")
+        return maintainerString.replace(/<[^>]+>/, "").trim()
+    }
+    
     function riskColor(level) {
         if (level === "high") return "#F44336"
         if (level === "medium") return "#FFC107"
         return "#4CAF50"
     }
 
-    Flickable {
+    // Background Gradient
+    Rectangle {
         anchors.fill: parent
-        contentWidth: parent.width
-        contentHeight: column.height
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: theme.palette.normal.base } // Light gray top
+            GradientStop { position: 1.0; color: theme.palette.normal.background } // White bottom
+        }
+    }
+
+    Flickable {
+        id: flick
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        contentHeight: column.height + units.gu(4)
         clip: true
 
         Column {
             id: column
-            width: parent.width
+            // Responsive Width Constraint: Max 80 GU, otherwise fill parent
+            width: Math.min(parent.width, units.gu(80))
+            anchors.horizontalCenter: parent.horizontalCenter
+            
             spacing: units.gu(2)
-            anchors.margins: units.gu(2)
+            anchors.top: parent.top
+            anchors.topMargin: units.gu(2)
+            
+            // --- Moved Header (Back + Title) ---
+            Item {
+                width: parent.width
+                height: units.gu(8) // Slightly taller to accommodate padding
+                
+                // Pill Header
+                Rectangle {
+                    height: units.gu(6)
+                    width: headerRow.implicitWidth + units.gu(4) // Dynamic width
+                    anchors.left: parent.left
+                    anchors.margins: units.gu(2) // Margins
+                    anchors.verticalCenter: parent.verticalCenter
+                    
+                    radius: height / 2
+                    color: "white" // White background as requested
+                    border.color: Qt.darker(theme.palette.normal.base, 1.1)
+                    border.width: 1
 
-            // 1. App Identity
-            Row {
+                    RowLayout {
+                        id: headerRow
+                        anchors.centerIn: parent
+                        spacing: units.gu(1.5)
+                        
+                        // Back Button
+                        Icon {
+                            name: "back"
+                            Layout.preferredHeight: units.gu(2.5)
+                            Layout.preferredWidth: units.gu(2.5)
+                            color: theme.palette.normal.backgroundText
+                            
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: pageStack.pop()
+                            }
+                        }
+                        
+                        // Separator
+                        Rectangle {
+                            Layout.preferredWidth: 1
+                            Layout.preferredHeight: units.gu(2.5)
+                            color: theme.palette.normal.baseText
+                            opacity: 0.3
+                        }
+
+                        // Title
+                        Label {
+                            text: detail.model.displayName
+                            font.bold: true
+                            font.pixelSize: units.gu(1.8)
+                            color: theme.palette.normal.backgroundText
+                            Layout.maximumWidth: units.gu(30)
+                            elide: Text.ElideRight
+                        }
+                    }
+                }
+            }
+            // ------------------------------------
+            
+            // 1. App Header (Icon + Info)
+            RowLayout {
+                width: parent.width - units.gu(4) // Account for margins if not using anchors
+                anchors.horizontalCenter: parent.horizontalCenter
                 spacing: units.gu(2)
 
-                Image {
-                    source: model.iconPath || ""
-                    width: units.gu(6)
-                    height: units.gu(6)
-                    fillMode: Image.PreserveAspectFit
+                Item {
+                    Layout.preferredWidth: units.gu(8)
+                    Layout.preferredHeight: units.gu(8)
+
+                    Image {
+                        id: appIcon
+                        anchors.fill: parent
+                        source: model.iconPath || ""
+                        fillMode: Image.PreserveAspectFit
+                        visible: false
+                        smooth: true
+                        mipmap: true
+                    }
+
+                    Rectangle {
+                        id: mask
+                        anchors.fill: parent
+                        radius: units.gu(2) // Slightly softer roundness
+                        visible: false
+                    }
+
+                    OpacityMask {
+                        anchors.fill: parent
+                        source: appIcon
+                        maskSource: mask
+                    }
+
+                    // Border Frame
+                    Rectangle {
+                        anchors.fill: parent
+                        color: "transparent"
+                        border.color: theme.palette.normal.base
+                        border.width: 1
+                        radius: units.gu(2)
+                    }
+
+                    // Fallback
+                    Rectangle {
+                        anchors.fill: parent
+                        color: theme.palette.normal.base
+                        visible: appIcon.status !== Image.Ready
+                        radius: units.gu(2)
+                        Label { 
+                            text: (model.displayName || "?").charAt(0)
+                            anchors.centerIn: parent 
+                            font.bold: true
+                            font.pixelSize: units.gu(3)
+                        }
+                    }
                 }
 
-                Column {
-                    spacing: units.gu(0.5)
-                    anchors.verticalCenter: parent.verticalCenter
-
+                ColumnLayout {
+                    Layout.fillWidth: true
                     Label {
                         text: model.displayName
                         font.bold: true
+                        font.pixelSize: units.gu(3) // Larger Title
+                        Layout.fillWidth: true
                         wrapMode: Text.WordWrap
-                        width: parent.width - units.gu(8) // Account for icon + spacing
                     }
-
                     Label {
-                        text: i18n.tr("Version %1").arg(model.version || "")
+                        text: i18n.tr("Version: %1").arg(model.version || "N/A")
+                        color: theme.palette.normal.backgroundText
                         font.pixelSize: units.gu(1.5)
                     }
                 }
             }
+            
+            // ... (Score and Permissions sections unchanged) ...
 
-            // 2. Trust Score
+            // 2. Parallax Score Card (Animated)
             Rectangle {
-                width: parent.width
-                height: childrenRect.height + units.gu(4)
-                radius: units.gu(1)
+                width: parent.width - units.gu(4)
+                height: units.gu(22)
+                anchors.horizontalCenter: parent.horizontalCenter
+                radius: units.gu(1.5) // Increased radius
                 color: theme.palette.normal.background
+                // Drop Shadow Effect Simulated via Border/Color
+                border.color: Qt.darker(theme.palette.normal.base, 1.1)
+                border.width: 1
 
                 Column {
-                    anchors.margins: units.gu(2)
-                    anchors.fill: parent
-                    spacing: units.gu(1)
+                    anchors.centerIn: parent
+                    spacing: units.gu(2)
 
                     Label {
-                        text: i18n.tr("Trust score")
+                        text: i18n.tr("Parallax Score")
                         font.bold: true
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        font.pixelSize: units.gu(1.5)
                     }
 
-                    Row {
-                        spacing: units.gu(2)
+                    Item {
+                        width: units.gu(12)
+                        height: units.gu(12)
+                        anchors.horizontalCenter: parent.horizontalCenter
 
+                        Canvas {
+                            id: scoreCanvas
+                            anchors.fill: parent
+                            property real score: model.trust.score
+                            property real angle: 0
+                            
+                            // Animate from 0 to score-angle
+                            NumberAnimation on angle {
+                                from: 0
+                                to: (scoreCanvas.score / 100) * 2 * Math.PI
+                                duration: 1500
+                                easing.type: Easing.OutCubic
+                                running: true
+                            }
+                            
+                            onAngleChanged: requestPaint()
+
+                            onPaint: {
+                                var ctx = getContext("2d")
+                                ctx.reset()
+                                var cx = width/2, cy = height/2, r = width/2 - 5
+                                
+                                // Background Circle
+                                ctx.beginPath()
+                                ctx.arc(cx, cy, r, 0, 2*Math.PI)
+                                ctx.lineWidth = 10 // Thicker
+                                ctx.strokeStyle = theme.palette.normal.base
+                                ctx.stroke()
+
+                                // Progress Arc
+                                if (angle > 0) {
+                                    ctx.beginPath()
+                                    ctx.arc(cx, cy, r, -Math.PI/2, -Math.PI/2 + angle)
+                                    ctx.lineWidth = 10
+                                    ctx.strokeStyle = riskColor(model.trust.riskLevel)
+                                    ctx.lineCap = "round"
+                                    ctx.stroke()
+                                }
+                            }
+                        }
+                        
                         Label {
                             text: model.trust.score
-                            font.pixelSize: units.gu(4)
+                            anchors.centerIn: parent
                             font.bold: true
-                        }
-
-                        Label {
-                            text: model.trust.riskLevel.toUpperCase()
-                            color: riskColor(model.trust.riskLevel)
-                            anchors.verticalCenter: parent.verticalCenter
-                            font.bold: true
+                            font.pixelSize: units.gu(4) // Larger Score Text
                         }
                     }
                 }
             }
-
-            // 3. Explanations
-            Rectangle {
-                width: parent.width
-                height: childrenRect.height + units.gu(4)
-                radius: units.gu(1)
+            
+            // 3. Why this score
+             Rectangle {
+                width: parent.width - units.gu(4)
+                height: whyCol.height + units.gu(4)
+                anchors.horizontalCenter: parent.horizontalCenter
+                radius: units.gu(1.5)
                 color: theme.palette.normal.background
-
+                border.color: Qt.darker(theme.palette.normal.base, 1.1)
+                border.width: 1
+                
                 Column {
-                    anchors.fill: parent
-                    anchors.margins: units.gu(2)
+                    id: whyCol
+                    width: parent.width - units.gu(4)
+                    anchors.centerIn: parent
                     spacing: units.gu(1)
-
-                    Label {
-                        text: i18n.tr("Why this score")
-                        font.bold: true
-                    }
-
+                    
+                    Label { text: i18n.tr("Why this score?"); font.bold: true; font.pixelSize: units.gu(1.5) }
+                    
                     Repeater {
-                        model: detail.model.explanations.length > 0 ? detail.model.explanations
-                                                             : [i18n.tr("No notable trust signals were found.")]
-
+                        model: detail.model.explanations.length > 0 ? detail.model.explanations : [i18n.tr("No signals found.")]
                         Label {
                             text: "• " + modelData
                             wrapMode: Text.WordWrap
                             width: parent.width
+                            font.pixelSize: units.gu(1.3)
                         }
                     }
                 }
             }
 
-            // 4. Permissions Summary
+            // 4. Permissions Table
             Rectangle {
-                width: parent.width
-                height: childrenRect.height + units.gu(4)
-                radius: units.gu(1)
+                width: parent.width - units.gu(4)
+                height: permCol.height + units.gu(4)
+                anchors.horizontalCenter: parent.horizontalCenter
+                radius: units.gu(1.5)
                 color: theme.palette.normal.background
+                border.color: Qt.darker(theme.palette.normal.base, 1.1)
+                border.width: 1
 
                 Column {
-                    anchors.fill: parent
-                    anchors.margins: units.gu(2)
-                    spacing: units.gu(1)
+                    id: permCol
+                    width: parent.width - units.gu(4)
+                    anchors.centerIn: parent
+                    spacing: units.gu(1.5)
 
-                    Label {
-                        text: i18n.tr("Permissions")
-                        font.bold: true
-                    }
+                    Label { text: i18n.tr("Permissions"); font.bold: true; font.pixelSize: units.gu(1.5) }
 
-                    Label {
-                        width: parent.width
-                        text: {
-                            const perms = []
-                            if (detail.model.permissions.network) perms.push(i18n.tr("Network"))
-                            if (detail.model.permissions.camera) perms.push(i18n.tr("Camera"))
-                            if (detail.model.permissions.microphone) perms.push(i18n.tr("Microphone"))
-                            if (detail.model.permissions.location) perms.push(i18n.tr("Location"))
-                            if (detail.model.permissions.storage) perms.push(i18n.tr("Storage"))
-                            return perms.length > 0 ? perms.join(", ")
-                                                   : i18n.tr("No special permissions")
+                    // Table Rows
+                    Repeater {
+                        model: [
+                            {label: "Network", val: detail.model.permissions.network},
+                            {label: "Camera", val: detail.model.permissions.camera},
+                            {label: "Microphone", val: detail.model.permissions.microphone},
+                            {label: "Location", val: detail.model.permissions.location},
+                            {label: "Storage", val: detail.model.permissions.storage}
+                        ]
+                        
+                        RowLayout {
+                            width: parent.width
+                            Label { 
+                                text: modelData.label 
+                                Layout.fillWidth: true
+                                color: theme.palette.normal.backgroundText
+                            }
+                            Icon {
+                                name: modelData.val ? "tick" : "close"
+                                color: modelData.val ? theme.palette.normal.positive : theme.palette.normal.baseText
+                                Layout.preferredHeight: units.gu(2.5) // Slightly Larger Icons
+                                Layout.preferredWidth: units.gu(2.5)
+                            }
                         }
-                        wrapMode: Text.WordWrap
                     }
                 }
             }
-
-            // 5. Update Info
-            Rectangle {
-                width: parent.width
-                height: childrenRect.height + units.gu(4)
-                radius: units.gu(1)
-                color: theme.palette.normal.background
-
-                Column {
-                    anchors.fill: parent
-                    anchors.margins: units.gu(2)
-                    spacing: units.gu(1)
-
-                    Label {
-                        text: i18n.tr("Updates")
-                        font.bold: true
-                    }
-
-                    Label {
-                        width: parent.width
-                        text: detail.model.updateInfo.updateAgeMonths !== null
-                              ? i18n.tr("Last updated %1 months ago").arg(detail.model.updateInfo.updateAgeMonths)
-                              : i18n.tr("Update information not available")
-                        wrapMode: Text.WordWrap
-                    }
+            
+            // 5. Updated Status (Tick + Date)
+            Row {
+                anchors.left: parent.left; anchors.leftMargin: units.gu(4)
+                spacing: units.gu(1)
+                Icon { name: "tick"; width: units.gu(2); height: units.gu(2); color: theme.palette.normal.positive }
+                Label { 
+                    text: i18n.tr("Updated: ") + (model.lastUpdated ? Qt.formatDate(model.lastUpdated, Qt.DefaultLocaleShortDate) : "Recently")
+                    color: theme.palette.normal.backgroundText
                 }
             }
 
-            // 6. Maintainer Info
-            Rectangle {
-                width: parent.width
-                height: childrenRect.height + units.gu(4)
-                radius: units.gu(1)
-                color: theme.palette.normal.background
+            // 6. Maintainer Cards (Split)
+            RowLayout {
+                width: parent.width - units.gu(4)
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: units.gu(2)
 
-                Column {
-                    anchors.fill: parent
-                    anchors.margins: units.gu(2)
-                    spacing: units.gu(1)
-
-                    Label {
-                        text: i18n.tr("Maintainer")
-                        font.bold: true
+                // Name Card
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: units.gu(10) // Taller cards
+                    color: theme.palette.normal.background
+                    radius: units.gu(1.5)
+                    border.color: Qt.darker(theme.palette.normal.base, 1.1)
+                    border.width: 1
+                    
+                    Column {
+                        anchors.centerIn: parent
+                        width: parent.width - units.gu(2)
+                        Label { text: i18n.tr("Maintainer"); font.pixelSize: units.gu(1.2); color: theme.palette.normal.backgroundText }
+                        Label { 
+                            text: getName(model.maintainer.name)
+                            font.bold: true 
+                            elide: Text.ElideRight 
+                            width: parent.width 
+                            horizontalAlignment: Text.AlignLeft
+                            font.pixelSize: units.gu(1.5)
+                        }
                     }
+                }
 
-                    Label {
-                        width: parent.width
-                        text: detail.model.maintainer.present
-                              ? detail.model.maintainer.name
-                              : i18n.tr("No maintainer information provided")
-                        wrapMode: Text.WordWrap
+                // Email Card
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: units.gu(10)
+                    color: theme.palette.normal.background
+                    radius: units.gu(1.5)
+                    border.color: Qt.darker(theme.palette.normal.base, 1.1)
+                    border.width: 1
+
+                    Column {
+                        anchors.centerIn: parent
+                        width: parent.width - units.gu(2)
+                        Label { text: i18n.tr("Contact"); font.pixelSize: units.gu(1.2); color: theme.palette.normal.backgroundText }
+                        Label { 
+                            text: getEmail(model.maintainer.name) 
+                            font.bold: true 
+                            elide: Text.ElideRight 
+                            width: parent.width
+                            horizontalAlignment: Text.AlignLeft
+                            font.pixelSize: units.gu(1.5)
+                        }
                     }
                 }
             }
-
-            // 7. Help Text
-            Label {
-                width: parent.width
-                text: i18n.tr(
-                    "Parallax provides information to help you understand app trust. "
-                    + "It does not block or monitor apps."
-                )
-                wrapMode: Text.WordWrap
-                color: theme.palette.normal.backgroundText
-            }
+            
+            // 7. Footer Info
+            RowLayout {
+                width: parent.width - units.gu(4)
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: units.gu(2)
+                
+                Icon {
+                    name: "info"
+                    Layout.preferredWidth: units.gu(3)
+                    Layout.preferredHeight: units.gu(3)
+                    color: theme.palette.normal.backgroundText
+                    Layout.alignment: Qt.AlignTop
+                }
+                
+                Label {
+                    Layout.fillWidth: true
+                    text: i18n.tr("Parallax provides information to help you understand app trust. It does not block or monitor apps.")
+                    wrapMode: Text.WordWrap
+                    font.pixelSize: units.gu(1.2)
+                    color: theme.palette.normal.backgroundText
+                }
+             }
+             
+             Item { height: units.gu(2) } // Bottom Spacer
         }
     }
 }
